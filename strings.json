@@ -1,0 +1,36 @@
+{
+  "config_flow": {
+    "step": {
+      "user": {
+        "title": "Configure Entity Receiver",
+        "description": "Set up the Entity Receiver to listen for broadcasted entities from other Home Assistant instances.",
+        "data": {
+          "udp_port": "UDP Port",
+          "broadcaster_name": "Broadcaster Name",
+          "poll_frequency": "Poll Frequency (milliseconds)"
+        }
+      }
+    },
+    "error": {
+      "port_in_use": "Port is already in use",
+      "cannot_connect": "Unable to bind to the specified port"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Entity Receiver Options",
+        "description": "Update the Entity Receiver configuration.",
+        "data": {
+          "udp_port": "UDP Port",
+          "broadcaster_name": "Broadcaster Name",
+          "poll_frequency": "Poll Frequency (milliseconds)"
+        }
+      }
+    },
+    "error": {
+      "port_in_use": "Port is already in use",
+      "cannot_connect": "Unable to bind to the specified port"
+    }
+  }
+}
