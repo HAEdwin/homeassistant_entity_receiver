@@ -3,8 +3,9 @@
   "name": "Entity Receiver",
   "version": "1.0.0",
   "documentation": "https://github.com/example/entity_receiver",
+  "issue_tracker": "https://github.com/HAEdwin/homeassistant_entity_receiver/issues",
   "requirements": [],
-  "codeowners": [],
+  "codeowners": ["@haedwin"],
   "config_flow": true,
   "iot_class": "local_push"
 }
