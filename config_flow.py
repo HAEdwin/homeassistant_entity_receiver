@@ -1,6 +1,7 @@
 """Config flow for Entity Receiver integration."""
 
 import logging
+import socket
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
@@ -11,10 +12,8 @@ from .const import (
     DOMAIN,
     CONF_UDP_PORT,
     CONF_BROADCASTER_NAME,
-    CONF_POLL_FREQUENCY,
     DEFAULT_UDP_PORT,
     DEFAULT_BROADCASTER_NAME,
-    DEFAULT_POLL_FREQUENCY,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,16 +33,12 @@ class EntityReceiverConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             port = user_input[CONF_UDP_PORT]
 
             try:
-                import socket
-
                 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 sock.bind(("", port))
                 sock.close()
             except OSError:
                 errors[CONF_UDP_PORT] = "port_in_use"
-            except Exception:
-                errors[CONF_UDP_PORT] = "cannot_connect"
 
             if not errors:
                 # Create unique ID based on port
@@ -63,9 +58,6 @@ class EntityReceiverConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional(
                     CONF_BROADCASTER_NAME, default=DEFAULT_BROADCASTER_NAME
                 ): cv.string,
-                vol.Required(
-                    CONF_POLL_FREQUENCY, default=DEFAULT_POLL_FREQUENCY
-                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=10000)),
             }
         )
 
@@ -99,16 +91,12 @@ class EntityReceiverOptionsFlowHandler(config_entries.OptionsFlow):
 
             if port != self.config_entry.data[CONF_UDP_PORT]:
                 try:
-                    import socket
-
                     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     sock.bind(("", port))
                     sock.close()
                 except OSError:
                     errors[CONF_UDP_PORT] = "port_in_use"
-                except Exception:
-                    errors[CONF_UDP_PORT] = "cannot_connect"
 
             if not errors:
                 return self.async_create_entry(title="", data=user_input)
@@ -130,15 +118,6 @@ class EntityReceiverOptionsFlowHandler(config_entries.OptionsFlow):
                         ),
                     ),
                 ): cv.string,
-                vol.Required(
-                    CONF_POLL_FREQUENCY,
-                    default=self.config_entry.options.get(
-                        CONF_POLL_FREQUENCY,
-                        self.config_entry.data.get(
-                            CONF_POLL_FREQUENCY, DEFAULT_POLL_FREQUENCY
-                        ),
-                    ),
-                ): vol.All(vol.Coerce(int), vol.Range(min=10, max=10000)),
             }
         )
 

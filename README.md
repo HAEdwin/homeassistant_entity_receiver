@@ -1,6 +1,6 @@
 # Entity Receiver
 
-A Home Assistant custom component that receives entity state broadcasts from other Home Assistant instances via UDP. Use it together with my other entity broadcaster at https://github.com/haedwin/homeassistant_entity_broadcaster
+A Home Assistant custom component that receives entity state broadcasts from other Home Assistant instances via UDP.
 
 ## Features
 
@@ -23,7 +23,6 @@ A Home Assistant custom component that receives entity state broadcasts from oth
 
 - **UDP Port**: The port to listen on for entity broadcasts (1024-65535)
 - **Broadcaster Name**: A friendly name for the broadcasting Home Assistant instance
-- **Poll Frequency**: How often to check for new UDP messages in milliseconds (10-10000ms, default: 100ms)
 
 ## Usage
 
@@ -32,7 +31,7 @@ Once configured, the integration will:
 1. Listen for UDP broadcasts on the specified port
 2. Automatically create sensors for each received entity
 3. Update sensor states in real-time
-4. Provide a status sensor showing the receiver state
+4. Provide a switch to enable/disable the UDP listener
 
 ## Entity Format
 

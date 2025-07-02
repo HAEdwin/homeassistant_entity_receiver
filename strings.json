@@ -6,8 +6,7 @@
         "description": "Set up the Entity Receiver to listen for broadcasted entities from other Home Assistant instances.",
         "data": {
           "udp_port": "UDP Port",
-          "broadcaster_name": "Broadcaster Name",
-          "poll_frequency": "Poll Frequency (milliseconds)"
+          "broadcaster_name": "Broadcaster Name"
         }
       }
     },
@@ -23,8 +22,7 @@
         "description": "Update the Entity Receiver configuration.",
         "data": {
           "udp_port": "UDP Port",
-          "broadcaster_name": "Broadcaster Name",
-          "poll_frequency": "Poll Frequency (milliseconds)"
+          "broadcaster_name": "Broadcaster Name"
         }
       }
     },

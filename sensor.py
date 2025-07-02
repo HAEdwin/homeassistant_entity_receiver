@@ -7,7 +7,6 @@ from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.entity import DeviceInfo
 
 from .const import DOMAIN
@@ -24,92 +23,45 @@ async def async_setup_entry(
     """Set up Entity Receiver sensors from a config entry."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    # Add the main receiver status sensor
-    async_add_entities([EntityReceiverStatusSensor(coordinator, entry)])
+    # Initialize sensor tracking
+    hass.data[DOMAIN][f"{entry.entry_id}_sensor_tracking"] = set()
 
     # Listen for new entities and add them dynamically
     @callback
-    def async_add_entity_sensors():
-        """Add sensors for new entities."""
-        current_entities = set(coordinator.entities.keys())
-        existing_sensors = {
-            entity.entity_id.split(".")[-1]
-            for entity in hass.data[DOMAIN].get(f"{entry.entry_id}_sensors", set())
-            if hasattr(entity, "entity_id") and entity.entity_id is not None
-        }
-
-        new_entities = current_entities - existing_sensors
-
-        if new_entities:
-            new_sensors = []
-            for entity_id in new_entities:
-                if entity_id:  # Ensure entity_id is not None or empty
-                    sensor = ReceivedEntitySensor(coordinator, entry, entity_id)
-                    new_sensors.append(sensor)
-
-            if new_sensors:
-                async_add_entities(new_sensors)
-
-                # Track added sensors
-                if f"{entry.entry_id}_sensors" not in hass.data[DOMAIN]:
-                    hass.data[DOMAIN][f"{entry.entry_id}_sensors"] = set()
-
-                hass.data[DOMAIN][f"{entry.entry_id}_sensors"].update(new_sensors)
-
-    # Set up the listener
-    coordinator.async_add_listener(async_add_entity_sensors)
-
-
-class EntityReceiverStatusSensor(CoordinatorEntity, SensorEntity):
-    """Sensor showing the status of the Entity Receiver."""
-
-    def __init__(
-        self, coordinator: EntityReceiverCoordinator, entry: ConfigEntry
-    ) -> None:
-        """Initialize the sensor."""
-        super().__init__(coordinator)
-        self._entry = entry
-        self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_status"
-        self._attr_name = f"Entity Receiver Status (Port {coordinator.port})"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            name=f"Entity Receiver (Port {self.coordinator.port})",
-            manufacturer="Entity Receiver",
-            model="UDP Receiver",
-            sw_version="1.0.0",
+    def async_add_entity_sensors(entity_id: str):
+        """Add sensor for new entity."""
+        # Track existing sensors by their original entity IDs
+        existing_sensors = hass.data[DOMAIN].get(
+            f"{entry.entry_id}_sensor_tracking", set()
         )
 
-    @property
-    def native_value(self) -> str:
-        """Return the state of the sensor."""
-        if self.coordinator._socket and not self.coordinator._socket._closed:
-            return "listening"
-        return "stopped"
+        if entity_id not in existing_sensors:
+            if entity_id:  # Ensure entity_id is not None or empty
+                sensor = ReceivedEntitySensor(coordinator, entry, entity_id)
+                async_add_entities([sensor])
+                # Track this entity ID as having a sensor
+                existing_sensors.add(entity_id)
+                hass.data[DOMAIN][
+                    f"{entry.entry_id}_sensor_tracking"
+                ] = existing_sensors
 
-    @property
-    def extra_state_attributes(self) -> Dict[str, Any]:
-        """Return additional state attributes."""
-        return {
-            "port": self.coordinator.port,
-            "broadcaster_name": self.coordinator.broadcaster_name,
-            "poll_frequency_ms": int(self.coordinator.poll_frequency * 1000),
-            "entities_count": len(self.coordinator.entities),
-            "entities": list(self.coordinator.entities.keys()),
-        }
+                # Trigger immediate state update for the new sensor
+                sensor.async_write_ha_state()
 
-    @property
-    def icon(self) -> str:
-        """Return the icon for the sensor."""
-        if self.native_value == "listening":
-            return "mdi:antenna"
-        return "mdi:antenna-off"
+    # Callback for when entities are removed from coordinator
+    @callback
+    def async_remove_entity_sensor(entity_id: str):
+        """Remove entity from sensor tracking when coordinator removes it."""
+        tracking_key = f"{entry.entry_id}_sensor_tracking"
+        if tracking_key in hass.data[DOMAIN]:
+            hass.data[DOMAIN][tracking_key].discard(entity_id)
+
+    # Set up the listeners
+    coordinator.add_entity_added_callback(async_add_entity_sensors)
+    coordinator.add_entity_removed_callback(async_remove_entity_sensor)
 
 
-class ReceivedEntitySensor(CoordinatorEntity, SensorEntity):
+class ReceivedEntitySensor(SensorEntity):
     """Sensor representing a received entity from the broadcaster."""
 
     def __init__(
@@ -119,9 +71,11 @@ class ReceivedEntitySensor(CoordinatorEntity, SensorEntity):
         entity_id: str,
     ) -> None:
         """Initialize the sensor."""
-        super().__init__(coordinator)
+        self.coordinator = coordinator
         self._entity_id = entity_id
         self._entry = entry
+        self._update_callback = None
+        self._status_callback = None
 
         # Validate entity_id
         if not entity_id:
@@ -144,8 +98,8 @@ class ReceivedEntitySensor(CoordinatorEntity, SensorEntity):
         return DeviceInfo(
             identifiers={(DOMAIN, self._entry.entry_id)},
             name=f"Entity Receiver (Port {self.coordinator.port})",
-            manufacturer="Entity Receiver",
-            model="UDP Receiver",
+            manufacturer="HAEdwin",
+            model="Entity Receiver",
             sw_version="1.0.0",
         )
 
@@ -220,3 +174,23 @@ class ReceivedEntitySensor(CoordinatorEntity, SensorEntity):
             return "mdi:toggle-switch"
         else:
             return "mdi:broadcast"
+
+    async def async_added_to_hass(self) -> None:
+        """When entity is added to hass."""
+        await super().async_added_to_hass()
+
+        # Set up callback for entity updates
+        @callback
+        def update_callback(entity_id: str):
+            if entity_id == self._entity_id:
+                self.async_write_ha_state()
+
+        self._update_callback = update_callback
+        self.coordinator.add_entity_updated_callback(update_callback)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """When entity will be removed from hass."""
+        # Remove update callback using public method
+        if self._update_callback:
+            self.coordinator.remove_entity_updated_callback(self._update_callback)
+        await super().async_will_remove_from_hass()
