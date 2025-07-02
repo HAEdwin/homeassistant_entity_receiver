@@ -1,6 +1,6 @@
 # Entity Receiver
 
-A Home Assistant custom component that receives entity state broadcasts from other Home Assistant instances via UDP.
+A Home Assistant custom integration that receives entity state broadcasts from other Home Assistant instances via UDP. Works together with my other custom integration for Home Assistant called Entity Broadcaster
 
 ## Features
 
