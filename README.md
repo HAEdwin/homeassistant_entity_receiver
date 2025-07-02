@@ -1,6 +1,8 @@
 # Entity Receiver
 
-A Home Assistant custom integration that receives entity state broadcasts from other Home Assistant instances via UDP. Works together with my other custom integration for Home Assistant called Entity Broadcaster
+A Home Assistant custom integration that receives entity state broadcasts from other Home Assistant instances via UDP. Works together with my other custom integration for Home Assistant called Entity Broadcaster.
+
+Use Case: I have my production instance of Home Assistant in the meter cupboard and it is connected to my smart energy meter with a P1/USB cable. I am developing an integration for Home Assistant on a development laptop but do not have the live data from the meter available there. This is where this set of custom integrations comes in handy but you may have a different use case. Enjoy!
 
 ## Features
 
@@ -56,13 +58,3 @@ The component expects JSON messages in the following format:
 - Check that the broadcaster is sending to the correct IP and port
 - Verify network connectivity between Home Assistant instances
 - Check the logs for any error messages
-
-## Changelog
-
-### 1.0.0
-- Initial release
-- UDP listener functionality
-- Dynamic entity creation
-- Configuration flow
-- Real-time updates
-- Configurable poll frequency for UDP message checking
