@@ -37,7 +37,7 @@ class EntityReceiverListenerSwitch(SwitchEntity):
         self.coordinator = coordinator
         self._entry = entry
         self._attr_unique_id = f"{DOMAIN}_{entry.entry_id}_listener_enabled"
-        self._attr_name = f"Entity Receiver Listener (Port {coordinator.port})"
+        self._attr_name = f"Entity Receiver switch for (Port {coordinator.port})"
         self._status_callback = None
 
     @property
